@@ -1,0 +1,5 @@
+   pandas
+   openpyxl
+   chromadb
+   sentence-transformers
+   requests

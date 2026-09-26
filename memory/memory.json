@@ -1,0 +1,11 @@
+{
+  "seen_anomalies": [
+    "Cash Balance: NaN",
+    "Deal with Barclays",
+    "Deposit to HSBC",
+    "Outflow to EU Subsidiary"
+  ],
+  "preferences": {
+    "unusual_outflow_threshold": 300000
+  }
+}

@@ -1,0 +1,7 @@
+category,title,detail,priority
+summary,Loan to Deutsche Bank,2500000,low
+alert,Cash Balance: NaN,No cash balance reported on 2026-09-25 and 2026-09-26.,medium
+alert,Deal with Barclays,750000,medium
+action,Revolutionary Credit: $5000000,5000000,high
+alert,Deposit to HSBC,1100000,medium
+alert,Outflow to EU Subsidiary,430000,high
