@@ -1,0 +1,50 @@
+{
+  "last_run": 1790438607.6896174,
+  "items": {
+    "action|revolutionary credit: $5000000|5000000": {
+      "title": "Revolutionary Credit: $5000000",
+      "first_seen": "2026-09-28T14:28:28",
+      "last_seen": "2026-09-28T14:28:28",
+      "times_seen": 1
+    },
+    "alert|outflow to eu subsidiary|430000": {
+      "title": "Outflow to EU Subsidiary",
+      "first_seen": "2026-09-28T14:28:28",
+      "last_seen": "2026-09-28T14:28:28",
+      "times_seen": 1
+    },
+    "alert|cash balance: nan|no cash balance reported on 2026-09-25 and 2026-09-26.": {
+      "title": "Cash Balance: NaN",
+      "first_seen": "2026-09-28T14:28:28",
+      "last_seen": "2026-09-28T14:28:28",
+      "times_seen": 1
+    },
+    "alert|deal with barclays|750000": {
+      "title": "Deal with Barclays",
+      "first_seen": "2026-09-28T14:28:28",
+      "last_seen": "2026-09-28T14:28:28",
+      "times_seen": 1
+    },
+    "alert|deposit to hsbc|1100000": {
+      "title": "Deposit to HSBC",
+      "first_seen": "2026-09-28T14:28:28",
+      "last_seen": "2026-09-28T14:28:28",
+      "times_seen": 1
+    },
+    "summary|loan to deutsche bank|2500000": {
+      "title": "Loan to Deutsche Bank",
+      "first_seen": "2026-09-28T14:28:28",
+      "last_seen": "2026-09-28T14:28:28",
+      "times_seen": 1
+    }
+  },
+  "last_keys": [
+    "action|revolutionary credit: $5000000|5000000",
+    "alert|outflow to eu subsidiary|430000",
+    "alert|cash balance: nan|no cash balance reported on 2026-09-25 and 2026-09-26.",
+    "alert|deal with barclays|750000",
+    "alert|deposit to hsbc|1100000",
+    "summary|loan to deutsche bank|2500000"
+  ],
+  "dropped": []
+}
