@@ -3,3 +3,5 @@
    chromadb
    sentence-transformers
    requests
+   flask
+   reportlab
