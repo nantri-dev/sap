@@ -1,0 +1,179 @@
+{
+  "last_run": 1790756420.915542,
+  "items": {
+    "action|revolutionary credit: $5000000|5000000": {
+      "title": "Revolutionary Credit: $5000000",
+      "first_seen": "2026-09-28T14:28:28",
+      "last_seen": "2026-09-28T14:28:28",
+      "times_seen": 1
+    },
+    "alert|outflow to eu subsidiary|430000": {
+      "title": "Outflow to EU Subsidiary",
+      "first_seen": "2026-09-28T14:28:28",
+      "last_seen": "2026-09-28T14:28:28",
+      "times_seen": 1
+    },
+    "alert|cash balance: nan|no cash balance reported on 2026-09-25 and 2026-09-26.": {
+      "title": "Cash Balance: NaN",
+      "first_seen": "2026-09-28T14:28:28",
+      "last_seen": "2026-09-28T14:28:28",
+      "times_seen": 1
+    },
+    "alert|deal with barclays|750000": {
+      "title": "Deal with Barclays",
+      "first_seen": "2026-09-28T14:28:28",
+      "last_seen": "2026-09-28T14:28:28",
+      "times_seen": 1
+    },
+    "alert|deposit to hsbc|1100000": {
+      "title": "Deposit to HSBC",
+      "first_seen": "2026-09-28T14:28:28",
+      "last_seen": "2026-09-28T14:28:28",
+      "times_seen": 1
+    },
+    "summary|loan to deutsche bank|2500000": {
+      "title": "Loan to Deutsche Bank",
+      "first_seen": "2026-09-28T14:28:28",
+      "last_seen": "2026-09-28T14:28:28",
+      "times_seen": 1
+    },
+    "action|revolver credit|revolving credit transaction of 5000000 with citi on account main operating, due 2026-10-03": {
+      "title": "Revolver Credit",
+      "first_seen": "2026-09-30T11:37:29",
+      "last_seen": "2026-09-30T11:37:29",
+      "times_seen": 1
+    },
+    "alert|cash balance: nan|cash balance prior transaction on 2026-09-25 is nan, flagging due to unusual high outflow": {
+      "title": "Cash Balance: NaN",
+      "first_seen": "2026-09-30T11:37:29",
+      "last_seen": "2026-09-30T11:37:29",
+      "times_seen": 1
+    },
+    "summary|deal transactions|two deal transactions with barclays on account main operating, no due date on file": {
+      "title": "Deal Transactions",
+      "first_seen": "2026-09-30T11:37:29",
+      "last_seen": "2026-09-30T11:37:29",
+      "times_seen": 1
+    },
+    "summary|outflow to eu subsidiary|outflow transaction of 430000 to eu subsidiary, no due date on file": {
+      "title": "Outflow to EU Subsidiary",
+      "first_seen": "2026-09-30T11:37:29",
+      "last_seen": "2026-09-30T11:37:29",
+      "times_seen": 1
+    },
+    "summary|loan transaction|2500000 loan with deutsche bank on account main operating, due 2026-09-28": {
+      "title": "Loan Transaction",
+      "first_seen": "2026-09-30T11:37:29",
+      "last_seen": "2026-09-30T11:37:29",
+      "times_seen": 1
+    },
+    "action|deposit to hsbc|deposit transaction of 1100000 to hsbc on account fx reserve, due 2026-10-01": {
+      "title": "Deposit to HSBC",
+      "first_seen": "2026-09-30T11:37:29",
+      "last_seen": "2026-09-30T11:37:29",
+      "times_seen": 1
+    },
+    "summary|loan transaction|2500000 loan from deutsche bank on account main operating, due 2026-09-28.": {
+      "title": "Loan Transaction",
+      "first_seen": "2026-09-30T12:30:09",
+      "last_seen": "2026-09-30T12:30:09",
+      "times_seen": 1
+    },
+    "alert|cash balance: nan|cash balance prior transaction is nan.": {
+      "title": "Cash Balance: NaN",
+      "first_seen": "2026-09-30T12:30:09",
+      "last_seen": "2026-09-30T12:30:09",
+      "times_seen": 1
+    },
+    "summary|deal transactions|2 deal transactions from barclays on account main operating, no due date on file.": {
+      "title": "Deal Transactions",
+      "first_seen": "2026-09-30T12:30:09",
+      "last_seen": "2026-09-30T12:30:09",
+      "times_seen": 1
+    },
+    "action|deposit|deposit to hsbc on account fx reserve, due 2026-10-01.": {
+      "title": "Deposit",
+      "first_seen": "2026-09-30T12:30:09",
+      "last_seen": "2026-09-30T12:30:09",
+      "times_seen": 1
+    },
+    "summary|outflow|outflow to eu subsidiary, no due date on file.": {
+      "title": "Outflow",
+      "first_seen": "2026-09-30T12:30:09",
+      "last_seen": "2026-09-30T12:30:09",
+      "times_seen": 1
+    },
+    "summary|previously flagged anomalies|previous anomalies flagged but no change.": {
+      "title": "Previously Flagged Anomalies",
+      "first_seen": "2026-09-30T12:30:09",
+      "last_seen": "2026-09-30T12:30:09",
+      "times_seen": 1
+    },
+    "summary|recurring anomalies|previous anomalies flagged, but no action.": {
+      "title": "Recurring Anomalies",
+      "first_seen": "2026-09-30T12:30:09",
+      "last_seen": "2026-09-30T12:30:09",
+      "times_seen": 1
+    },
+    "summary|cash balance|nan - internal - 2026-09-25": {
+      "title": "Cash Balance",
+      "first_seen": "2026-09-30T13:53:44",
+      "last_seen": "2026-09-30T13:53:44",
+      "times_seen": 1
+    },
+    "summary|outflow above threshold|430000 - eu subsidiary - 2026-09-25": {
+      "title": "Outflow Above Threshold",
+      "first_seen": "2026-09-30T13:53:44",
+      "last_seen": "2026-09-30T13:53:44",
+      "times_seen": 1
+    },
+    "summary|loan transaction|2500000 deutsche bank - main operating - 2026-09-20": {
+      "title": "Loan Transaction",
+      "first_seen": "2026-09-30T13:53:44",
+      "last_seen": "2026-09-30T13:53:44",
+      "times_seen": 1
+    },
+    "summary|deal transaction|750000 barclays - main operating - 2026-09-25": {
+      "title": "Deal Transaction",
+      "first_seen": "2026-09-30T13:53:44",
+      "last_seen": "2026-09-30T13:53:44",
+      "times_seen": 1
+    },
+    "summary|deposit transaction|1100000 hsbc - fx reserve - 2026-09-18": {
+      "title": "Deposit Transaction",
+      "first_seen": "2026-09-30T13:53:44",
+      "last_seen": "2026-09-30T13:53:44",
+      "times_seen": 1
+    },
+    "summary|outflow transaction|430000 eu subsidiary - main operating - 2026-09-25": {
+      "title": "Outflow Transaction",
+      "first_seen": "2026-09-30T13:53:44",
+      "last_seen": "2026-09-30T13:53:44",
+      "times_seen": 1
+    },
+    "previous_flags|previous flags|['cash balance: nan', 'deal with barclays', 'deposit to hsbc', 'outflow to eu subsidiary']": {
+      "title": "Previous Flags",
+      "first_seen": "2026-09-30T13:53:44",
+      "last_seen": "2026-09-30T13:53:44",
+      "times_seen": 1
+    }
+  },
+  "last_keys": [
+    "summary|cash balance|nan - internal - 2026-09-25",
+    "summary|outflow above threshold|430000 - eu subsidiary - 2026-09-25",
+    "summary|loan transaction|2500000 deutsche bank - main operating - 2026-09-20",
+    "summary|deal transaction|750000 barclays - main operating - 2026-09-25",
+    "summary|deposit transaction|1100000 hsbc - fx reserve - 2026-09-18",
+    "summary|outflow transaction|430000 eu subsidiary - main operating - 2026-09-25",
+    "previous_flags|previous flags|['cash balance: nan', 'deal with barclays', 'deposit to hsbc', 'outflow to eu subsidiary']"
+  ],
+  "dropped": [
+    "Loan Transaction",
+    "Cash Balance: NaN",
+    "Deal Transactions",
+    "Deposit",
+    "Outflow",
+    "Previously Flagged Anomalies",
+    "Recurring Anomalies"
+  ]
+}
