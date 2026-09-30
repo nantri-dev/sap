@@ -27,55 +27,33 @@ import json
 import os
 import re
 import secrets
-import shutil
 import socket
 import subprocess
 import sys
 import threading
-import time
 import webbrowser
 from datetime import datetime
 
 import requests
-from flask import Flask, Response, g, jsonify, request
+from flask import Flask, Response, jsonify, request
+import io
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from werkzeug.utils import secure_filename
 
 import universal_ingest
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-WORKSPACES = os.path.join(BASE, "workspaces")
-SAMPLE_XLSX = os.path.join(BASE, "sample", "sample_data.xlsx")   # used to seed public-demo visitors
-PUBLIC = os.environ.get("LEDGERMIND_PUBLIC", "") == "1"          # 1 = hosted demo, one workspace per visitor
-
-
-def ws_root():
-    """Folder holding this visitor's data. On your laptop it is just the project folder."""
-    return getattr(g, "ws_root", BASE)
-
-
-def p_briefing():
-    return os.path.join(ws_root(), "output", "briefing.csv")
-
-
-def p_summary():
-    return os.path.join(ws_root(), "output", "data_summary.txt")
-
-
-def p_data():
-    return os.path.join(ws_root(), "data")
-
-
-def p_seen():
-    return os.path.join(ws_root(), "memory", "web_seen.json")      # powers the memory badges
-
-
-def p_switch():
-    return os.path.join(ws_root(), "memory", "ai_switch.json")     # powers the kill switch
-
-
-def p_active():
-    return os.path.join(ws_root(), "memory", "active_file.json")   # the spreadsheet in use
-
+BRIEFING_CSV = os.path.join(BASE, "output", "briefing.csv")
+SUMMARY_TXT = os.path.join(BASE, "output", "data_summary.txt")
+DATA_DIR = os.path.join(BASE, "data")
+MEMORY_DIR = os.path.join(BASE, "memory")
+SEEN_FILE = os.path.join(MEMORY_DIR, "web_seen.json")      # powers the memory badges
+SWITCH_FILE = os.path.join(MEMORY_DIR, "ai_switch.json")   # powers the kill switch
+ACTIVE_FILE = os.path.join(MEMORY_DIR, "active_file.json") # the spreadsheet the user uploaded
 
 OLLAMA_BASE = os.environ.get("OLLAMA_BASE", "http://localhost:11434")
 OLLAMA_URL = OLLAMA_BASE + "/api/generate"
@@ -119,51 +97,7 @@ def require_token():
 def remember_token(resp):
     if TOKEN and request.args.get("token") == TOKEN:
         resp.set_cookie("lm_token", TOKEN, httponly=True, samesite="Lax")
-    if getattr(g, "new_sid", None):  # SameSite=None so it also works when the page is shown inside an iframe
-        resp.set_cookie("lm_sid", g.new_sid, httponly=True, samesite="None", secure=True, max_age=86400)
     return resp
-
-
-def _cleanup_workspaces(max_age_hours=24):
-    if not os.path.isdir(WORKSPACES):
-        return
-    now = time.time()
-    for name in os.listdir(WORKSPACES):
-        path = os.path.join(WORKSPACES, name)
-        if os.path.isdir(path) and now - os.path.getmtime(path) > max_age_hours * 3600:
-            shutil.rmtree(path, ignore_errors=True)
-
-
-def _seed_workspace(root):
-    """First visit in public mode: give the visitor their own copy of the sample briefing."""
-    _cleanup_workspaces()
-    os.makedirs(os.path.join(root, "data"), exist_ok=True)
-    os.makedirs(os.path.join(root, "memory"), exist_ok=True)
-    if os.path.exists(SAMPLE_XLSX):
-        target = os.path.join(root, "data", "sample_data.xlsx")
-        shutil.copyfile(SAMPLE_XLSX, target)
-        try:
-            universal_ingest.run(target, root=root)
-            _save_json(os.path.join(root, "memory", "active_file.json"),
-                       {"path": target, "name": "sample_data.xlsx (made-up demo data)",
-                        "uploaded_at": datetime.now().isoformat(timespec="seconds")})
-        except Exception as exc:  # noqa: BLE001
-            print("Could not seed sample data:", exc)
-
-
-@app.before_request
-def pick_workspace():
-    if not PUBLIC:
-        g.ws_root = BASE
-        return None
-    sid = request.cookies.get("lm_sid", "")
-    if not re.fullmatch(r"[0-9a-f]{16}", sid):
-        sid = secrets.token_hex(8)
-        g.new_sid = sid
-    g.ws_root = os.path.join(WORKSPACES, sid)
-    if not os.path.isdir(g.ws_root):
-        _seed_workspace(g.ws_root)
-    return None
 
 
 # --------------------------------------------------------------------------
@@ -187,11 +121,11 @@ def _save_json(path, data):
 # kill switch
 # --------------------------------------------------------------------------
 def ai_enabled():
-    return bool(_load_json(p_switch(), {"ai_enabled": True}).get("ai_enabled", True))
+    return bool(_load_json(SWITCH_FILE, {"ai_enabled": True}).get("ai_enabled", True))
 
 
 def set_ai_enabled(value):
-    _save_json(p_switch(), {
+    _save_json(SWITCH_FILE, {
         "ai_enabled": bool(value),
         "changed_at": datetime.now().isoformat(timespec="seconds"),
     })
@@ -202,10 +136,10 @@ def set_ai_enabled(value):
 # --------------------------------------------------------------------------
 def load_items():
     """Read briefing.csv, tidy it, drop exact duplicate rows, put HIGH first."""
-    if not os.path.exists(p_briefing()):
+    if not os.path.exists(BRIEFING_CSV):
         return []
     items, seen = [], set()
-    with open(p_briefing(), "r", encoding="utf-8-sig", newline="") as f:
+    with open(BRIEFING_CSV, "r", encoding="utf-8-sig", newline="") as f:
         for row in csv.DictReader(f):
             category = (row.get("category") or "").strip().lower()
             title = (row.get("title") or "").strip()
@@ -231,7 +165,7 @@ def load_items():
 def data_summary():
     """Compact facts about the WHOLE uploaded file (written by universal_ingest.py)."""
     try:
-        with open(p_summary(), "r", encoding="utf-8") as f:
+        with open(SUMMARY_TXT, "r", encoding="utf-8") as f:
             return f.read()[:4500]
     except OSError:
         return ""
@@ -244,10 +178,10 @@ def update_history(items):
     Returns (history_by_key, titles_that_disappeared_since_last_run).
     """
     try:
-        run_id = os.path.getmtime(p_briefing())
+        run_id = os.path.getmtime(BRIEFING_CSV)
     except OSError:
         return {}, []
-    state = _load_json(p_seen(), {"last_run": None, "items": {}, "last_keys": [], "dropped": []})
+    state = _load_json(SEEN_FILE, {"last_run": None, "items": {}, "last_keys": [], "dropped": []})
     if state.get("last_run") != run_id:
         now = datetime.now().isoformat(timespec="seconds")
         current_keys = [i["key"] for i in items]
@@ -264,7 +198,7 @@ def update_history(items):
         state["last_run"] = run_id
         state["last_keys"] = current_keys
         state["dropped"] = dropped
-        _save_json(p_seen(), state)
+        _save_json(SEEN_FILE, state)
     return state["items"], state.get("dropped", [])
 
 
@@ -323,7 +257,55 @@ def keyword_search(items, question):
     scored.sort(key=lambda s: (-s[0], PRIORITY_RANK[s[1]["priority"]]))
     return [i for _, i in scored[:5]]
 
+PRIORITY_COLORS = {"high": colors.HexColor("#F87171"), "medium": colors.HexColor("#FBBF24"),
+                   "low": colors.HexColor("#22D3EE")}
 
+
+def build_pdf(items, source_name, generated_at):
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=letter, topMargin=0.6 * inch, bottomMargin=0.6 * inch,
+                            leftMargin=0.6 * inch, rightMargin=0.6 * inch)
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle("LMTitle", parent=styles["Title"], textColor=colors.HexColor("#1D1A42"))
+    meta_style = ParagraphStyle("LMMeta", parent=styles["Normal"], textColor=colors.grey, fontSize=9)
+    cell_style = ParagraphStyle("LMCell", parent=styles["Normal"], fontSize=9, leading=12)
+
+    story = [Paragraph("LedgerMind &mdash; Morning Briefing", title_style)]
+    meta_bits = []
+    if generated_at:
+        meta_bits.append(f"Generated {generated_at}")
+    if source_name:
+        meta_bits.append(f"Source: {source_name}")
+    if meta_bits:
+        story.append(Paragraph(" &middot; ".join(meta_bits), meta_style))
+    story.append(Spacer(1, 14))
+
+    if not items:
+        story.append(Paragraph("No items in today's briefing.", styles["Normal"]))
+    else:
+        data = [["Priority", "Category", "Title", "Detail"]]
+        for it in items:
+            data.append([it["priority"].upper(), it["category"] or "-",
+                        Paragraph(it["title"], cell_style), Paragraph(it["detail"], cell_style)])
+        table = Table(data, colWidths=[0.9 * inch, 1.0 * inch, 1.6 * inch, 3.2 * inch], repeatRows=1)
+        style_cmds = [
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1D1A42")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F3F4F8")]),
+        ]
+        for row_idx, it in enumerate(items, start=1):
+            style_cmds.append(("TEXTCOLOR", (0, row_idx), (0, row_idx),
+                              PRIORITY_COLORS.get(it["priority"], colors.black)))
+        table.setStyle(TableStyle(style_cmds))
+        story.append(table)
+
+    story.append(Spacer(1, 16))
+    story.append(Paragraph("Generated locally by LedgerMind. No data left this device.", meta_style))
+    doc.build(story)
+    return buf.getvalue()
 def summary_block():
     s = data_summary()
     return ("\n\nFacts about the whole data file:\n" + s) if s else ""
@@ -347,12 +329,12 @@ def api_briefing():
     counts = {p: sum(1 for i in items if i["priority"] == p) for p in PRIORITY_RANK}
     counts["total"] = len(items)
     generated = ""
-    if os.path.exists(p_briefing()):
-        generated = datetime.fromtimestamp(os.path.getmtime(p_briefing())).strftime("%d %b %Y, %I:%M %p")
-    active = _load_json(p_active(), {})
+    if os.path.exists(BRIEFING_CSV):
+        generated = datetime.fromtimestamp(os.path.getmtime(BRIEFING_CSV)).strftime("%d %b %Y, %I:%M %p")
+    active = _load_json(ACTIVE_FILE, {})
     return jsonify({"items": out, "counts": counts, "dropped": dropped,
                     "generated_at": generated, "ai_enabled": ai_enabled(),
-                    "source": active.get("name", ""), "public": PUBLIC})
+                    "source": active.get("name", "")})
 
 
 @app.post("/api/switch")
@@ -449,7 +431,17 @@ def api_ask():
     text, err = ask_ollama(prompt)
     return jsonify({"ai": True, "answer": text or "", "error": err, "matches": matches})
 
-
+@app.get("/api/export/pdf")
+def api_export_pdf():
+    items = load_items()
+    active = _load_json(ACTIVE_FILE, {})
+    generated = ""
+    if os.path.exists(BRIEFING_CSV):
+        generated = datetime.fromtimestamp(os.path.getmtime(BRIEFING_CSV)).strftime("%d %b %Y, %I:%M %p")
+    pdf_bytes = build_pdf(items, active.get("name", ""), generated)
+    filename = f"LedgerMind_Briefing_{datetime.now().strftime('%Y-%m-%d')}.pdf"
+    return Response(pdf_bytes, mimetype="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'})
 @app.post("/api/upload")
 def api_upload():
     """Accept ANY .xlsx/.xlsm/.csv, work out its columns, rebuild the briefing."""
@@ -460,15 +452,15 @@ def api_upload():
     if ext not in (".xlsx", ".xlsm", ".csv"):
         return jsonify({"ok": False, "error": "Please upload an .xlsx, .xlsm or .csv file "
                                               "(old .xls: open it in Excel and Save As .xlsx)."}), 400
-    os.makedirs(p_data(), exist_ok=True)
+    os.makedirs(DATA_DIR, exist_ok=True)
     name = secure_filename(f.filename) or ("uploaded" + ext)
-    path = os.path.join(p_data(), name)
+    path = os.path.join(DATA_DIR, name)
     f.save(path)
     try:
-        report = universal_ingest.run(path, root=ws_root())
+        report = universal_ingest.run(path)
     except Exception as exc:  # noqa: BLE001
         return jsonify({"ok": False, "error": f"Could not read that file: {exc}"}), 400
-    _save_json(p_active(), {"path": path, "name": name,
+    _save_json(ACTIVE_FILE, {"path": path, "name": name,
                              "uploaded_at": datetime.now().isoformat(timespec="seconds")})
     return jsonify({"ok": True, "report": report})
 
@@ -476,15 +468,13 @@ def api_upload():
 @app.post("/api/refresh")
 def api_refresh():
     """Re-runs the pipeline so the demo can be done from the browser."""
-    active = _load_json(p_active(), {})
+    active = _load_json(ACTIVE_FILE, {})
     if active.get("path") and os.path.exists(active["path"]):
         try:
-            universal_ingest.run(active["path"], root=ws_root())
+            universal_ingest.run(active["path"])
         except Exception as exc:  # noqa: BLE001
             return jsonify({"ok": False, "error": f"Could not read {active.get('name')}: {exc}"}), 500
         return jsonify({"ok": True})
-    if PUBLIC:
-        return jsonify({"ok": False, "error": "Nothing to refresh yet. Upload a file first."}), 400
     env = dict(os.environ, PYTHONIOENCODING="utf-8")
     try:
         result = subprocess.run([sys.executable, os.path.join(BASE, "main.py")], cwd=BASE,
@@ -566,7 +556,6 @@ PAGE = r"""<!doctype html>
   .ask{display:flex;gap:8px;margin:22px 0 6px}
   .ask input{flex:1;min-width:0;padding:12px 16px;border-radius:999px;border:1px solid #3a3670;background:var(--panel);color:var(--text);font:inherit}
   .askbox{background:var(--panel);border:1px solid var(--purple);border-radius:12px;padding:14px;margin-top:8px;line-height:1.5;font-size:14.5px}
-  .note{margin:14px 0 0;padding:10px 14px;border-radius:12px;background:#2a2410;border:1px solid var(--gold);color:#ffe9a8;font-size:13.5px}
   .match{padding:6px 0;border-top:1px solid #2b2860;font-size:14px;color:var(--muted)}
   @media (max-width:560px){h1{font-size:22px}.wrap{padding:18px 14px 50px}}
 </style>
@@ -583,10 +572,11 @@ PAGE = r"""<!doctype html>
       <button id="upload">&#8593; Upload your data</button>
       <button id="refresh">&#8635; Refresh briefing</button>
       <button id="switch" class="sw on">AI reasoning: ON</button>
+      <button id="exportpdf">&#8681; Download PDF</button>
+      <button id="copysum">&#128203; Copy summary</button>
     </div>
   </header>
   <div id="banner"></div>
-  <div id="publicnote"></div>
   <div id="uploadout"></div>
   <div class="ask">
     <input id="q" placeholder="Ask anything about today's briefing...">
@@ -597,7 +587,7 @@ PAGE = r"""<!doctype html>
   <h2>Needs your attention</h2>
   <div id="list"></div>
   <div id="droppedWrap"></div>
-  <footer id="foot">Runs entirely on this machine &middot; local model via Ollama &middot; no data leaves this device &middot; the AI explains, you decide</footer>
+  <footer>Runs entirely on this machine &middot; local model via Ollama &middot; no data leaves this device &middot; the AI explains, you decide</footer>
 </div>
 <script>
 const $ = (s) => document.querySelector(s);
@@ -695,11 +685,6 @@ async function fill(body, it) {
 
 function render() {
   paintSwitch();
-  if (state.public) $("#foot").textContent = "Demo instance with an open-source model running inside this same container \u00b7 no AI vendor is called \u00b7 in production the same container runs inside your own network \u00b7 the AI explains, you decide";
-  const pn = $("#publicnote");
-  pn.innerHTML = "";
-  if (state.public) pn.appendChild(el("div", "note",
-    "Public demo: this workspace is private to your browser and is deleted after 24 hours. Please use made-up data only."));
   const c = state.counts || {};
   const src = state.source ? " Source file: " + state.source + "." : "";
   $("#sub").textContent = state.generated_at
@@ -778,6 +763,20 @@ async function ask() {
   }
 }
 $("#askbtn").onclick = ask;
+$("#exportpdf").onclick = () => { window.location.href = "/api/export/pdf"; };
+
+$("#copysum").onclick = async () => {
+  const lines = state.items.map(it => "[" + it.priority.toUpperCase() + "] " + it.title + ": " + it.detail);
+  const text = "LedgerMind Morning Briefing\n" +
+    (state.generated_at ? "Generated " + state.generated_at + "\n" : "") + "\n" + lines.join("\n");
+  try {
+    await navigator.clipboard.writeText(text);
+    const b = $("#copysum");
+    const old = b.textContent;
+    b.textContent = "Copied!";
+    setTimeout(() => { b.textContent = old; }, 1500);
+  } catch (e) { alert("Could not copy. Your browser may be blocking clipboard access."); }
+};
 $("#q").addEventListener("keydown", e => { if (e.key === "Enter") ask(); });
 
 $("#upload").onclick = () => $("#file").click();
